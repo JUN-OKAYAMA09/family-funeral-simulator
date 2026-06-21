@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家族葬 見積もりシミュレーター</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: #f4f4f0;
+      color: #2c2c2c;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #1a1a1a;
+    }
+    header p {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #777;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 合計金額バー */
+    .total-bar {
+      background: #2b2b2b;
+      color: #fff;
+      border-radius: 12px;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 16px;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    }
+    .total-bar .label {
+      font-size: 0.9rem;
+      opacity: 0.75;
+      letter-spacing: 0.05em;
+    }
+    .total-bar .amount {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .total-bar .amount span {
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin-left: 4px;
+      opacity: 0.8;
+    }
+
+    /* カード */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 24px;
+      border-bottom: 1px solid #ececec;
+    }
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .card-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      flex: 1;
+    }
+    .card-subtotal {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #333;
+      white-space: nowrap;
+    }
+    .card-body {
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 行 */
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .row label {
+      font-size: 0.88rem;
+      color: #555;
+      width: 130px;
+      flex-shrink: 0;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+    .input-group .prefix {
+      font-size: 0.85rem;
+      color: #888;
+      white-space: nowrap;
+    }
+    input[type="number"] {
+      width: 100%;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.95rem;
+      color: #222;
+      transition: border-color 0.15s;
+      appearance: none;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #666;
+    }
+    .row-result {
+      font-size: 0.88rem;
+      color: #888;
+      white-space: nowrap;
+      width: 100px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* プラン選択 */
+    .plan-selector {
+      display: flex;
+      gap: 8px;
+    }
+    .plan-btn {
+      flex: 1;
+      padding: 10px 4px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .plan-btn .plan-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: block;
+    }
+    .plan-btn .plan-price {
+      font-size: 0.75rem;
+      color: #888;
+      display: block;
+      margin-top: 2px;
+    }
+    .plan-btn.active {
+      border-color: #2b2b2b;
+      background: #2b2b2b;
+      color: #fff;
+    }
+    .plan-btn.active .plan-price { color: #ccc; }
+
+    /* 区切り線 */
+    .divider {
+      height: 1px;
+      background: #f0f0f0;
+    }
+
+    /* 内訳ブレークダウン */
+    .breakdown {
+      background: #f9f9f7;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .breakdown h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      padding: 5px 0;
+      border-bottom: 1px solid #ebebeb;
+      color: #444;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row .bname { color: #555; }
+    .breakdown-row .bamt { font-weight: 600; color: #222; }
+
+    /* カラー */
+    .icon-soogi   { background: #eef0ff; }
+    .icon-henrei  { background: #fff4ee; }
+    .icon-inshoku { background: #f0fff4; }
+    .icon-jiin    { background: #fdf4ff; }
+
+    /* リセット */
+    .reset-btn {
+      display: block;
+      margin: 8px auto 0;
+      padding: 10px 28px;
+      background: none;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .reset-btn:hover { border-color: #888; color: #333; }
+
+    @media (max-width: 520px) {
+      .row { flex-wrap: wrap; }
+      .row label { width: 100%; }
+      .row-result { width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>家族葬 見積もりシミュレーター</h1>
+  <p>各項目を入力すると合計金額がリアルタイムで更新されます</p>
+</header>
+
+<div class="container">
+
+  <!-- 合計 -->
+  <div class="total-bar">
+    <div class="label">お見積もり合計</div>
+    <div class="amount" id="total">0<span>万円</span></div>
+  </div>
+
+  <!-- 葬儀一式 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-soogi">⚱️</div>
+      <h2>葬儀一式</h2>
+      <div class="card-subtotal" id="sub-soogi">0 万円</div>
+    </div>
+    <div class="card-body">
+      <div style="font-size:0.82rem;color:#999;margin-bottom:-4px;">プランを選ぶか、各項目を直接入力できます</div>
+      <div class="plan-selector">
+        <button class="plan-btn" data-plan="small"  onclick="applyPlan('small')">
+          <span class="plan-name">小規模</span>
+          <span class="plan-price">〜50万円目安</span>
+        </button>
+        <button class="plan-btn active" data-plan="standard" onclick="applyPlan('standard')">
+          <span class="plan-name">標準</span>
+          <span class="plan-price">〜100万円目安</span>
+        </button>
+        <button class="plan-btn" data-plan="premium" onclick="applyPlan('premium')">
+          <span class="plan-name">充実</span>
+          <span class="plan-price">〜150万円目安</span>
+        </button>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <label>棺・納棺用品</label>
+        <div class="input-group">
+          <input type="number" id="s-kan" value="15" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>祭壇・装飾</label>
+        <div class="input-group">
+          <input type="number" id="s-saidan" value="20" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>搬送・安置</label>
+        <div class="input-group">
+          <input type="number" id="s-hansou" value="10" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>火葬・斎場費</label>
+        <div class="input-group">
+          <input type="number" id="s-kasou" value="15" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>スタッフ・その他</label>
+        <div class="input-group">
+          <input type="number" id="s-staff" value="10" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 返礼品 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-henrei">🎁</div>
+      <h2>返礼品</h2>
+      <div class="card-subtotal" id="sub-henrei">0 万円</div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <label>香典返し 単価</label>
+        <div class="input-group">
+          <input type="number" id="h-tanka" value="3000" min="0" oninput="calc()">
+          <span class="prefix">円</span>
+        </div>
+        <div class="row-result" id="r-henrei">—</div>
+      </div>
+      <div class="row">
+        <label>お渡し人数</label>
+        <div class="input-group">
+          <input type="number" id="h-ninzu" value="30" min="0" oninput="calc()">
+          <span class="prefix">人</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 飲食 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-inshoku">🍱</div>
+      <h2>飲食（通夜振る舞い・精進落とし）</h2>
+      <div class="card-subtotal" id="sub-inshoku">0 万円</div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <label>通夜振る舞い 単価</label>
+        <div class="input-group">
+          <input type="number" id="i-tuya-tanka" value="3000" min="0" oninput="calc()">
+          <span class="prefix">円/人</span>
+        </div>
+        <div class="row-result" id="r-tuya">—</div>
+      </div>
+      <div class="row">
+        <label>通夜 人数</label>
+        <div class="input-group">
+          <input type="number" id="i-tuya-ninzu" value="20" min="0" oninput="calc()">
+          <span class="prefix">人</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <label>精進落とし 単価</label>
+        <div class="input-group">
+          <input type="number" id="i-seijin-tanka" value="5000" min="0" oninput="calc()">
+          <span class="prefix">円/人</span>
+        </div>
+        <div class="row-result" id="r-seijin">—</div>
+      </div>
+      <div class="row">
+        <label>精進落とし 人数</label>
+        <div class="input-group">
+          <input type="number" id="i-seijin-ninzu" value="20" min="0" oninput="calc()">
+          <span class="prefix">人</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 寺院費用 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-jiin">🏯</div>
+      <h2>寺院費用</h2>
+      <div class="card-subtotal" id="sub-jiin">0 万円</div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <label>お布施</label>
+        <div class="input-group">
+          <input type="number" id="j-ofuse" value="20" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>戒名料</label>
+        <div class="input-group">
+          <input type="number" id="j-kaimyo" value="30" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>車代・お膳料</label>
+        <div class="input-group">
+          <input type="number" id="j-sharei" value="2" min="0" oninput="calc()">
+          <span class="prefix">万円</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 内訳 -->
+  <div class="breakdown">
+    <h3>内訳サマリー</h3>
+    <div class="breakdown-row">
+      <span class="bname">⚱️ 葬儀一式</span>
+      <span class="bamt" id="b-soogi">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bname">🎁 返礼品</span>
+      <span class="bamt" id="b-henrei">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bname">🍱 飲食</span>
+      <span class="bamt" id="b-inshoku">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="bname">🏯 寺院費用</span>
+      <span class="bamt" id="b-jiin">—</span>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">リセット</button>
+
+</div>
+
+<script>
+  const PLANS = {
+    small:    { kan: 8,  saidan: 10, hansou: 6,  kasou: 8,  staff: 5  },
+    standard: { kan: 15, saidan: 20, hansou: 10, kasou: 15, staff: 10 },
+    premium:  { kan: 25, saidan: 40, hansou: 15, kasou: 20, staff: 15 },
+  };
+
+  function applyPlan(key) {
+    const p = PLANS[key];
+    setVal('s-kan',    p.kan);
+    setVal('s-saidan', p.saidan);
+    setVal('s-hansou', p.hansou);
+    setVal('s-kasou',  p.kasou);
+    setVal('s-staff',  p.staff);
+    document.querySelectorAll('.plan-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.plan === key)
+    );
+    calc();
+  }
+
+  function setVal(id, v) { document.getElementById(id).value = v; }
+  function getVal(id)    { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function fmt(man)  { return man.toFixed(1) + ' 万円'; }
+  function fmtB(man) { return man === 0 ? '0 万円' : man.toFixed(1) + ' 万円'; }
+
+  function calc() {
+    // 葬儀一式
+    const soogi = getVal('s-kan') + getVal('s-saidan') + getVal('s-hansou')
+                + getVal('s-kasou') + getVal('s-staff');
+
+    // 返礼品
+    const henreiRaw = getVal('h-tanka') * getVal('h-ninzu');
+    const henrei = henreiRaw / 10000;
+    document.getElementById('r-henrei').textContent =
+      henreiRaw > 0 ? (henreiRaw / 10000).toFixed(1) + '万円' : '—';
+
+    // 飲食
+    const tuyaRaw   = getVal('i-tuya-tanka')   * getVal('i-tuya-ninzu');
+    const seijinRaw = getVal('i-seijin-tanka')  * getVal('i-seijin-ninzu');
+    const inshoku   = (tuyaRaw + seijinRaw) / 10000;
+    document.getElementById('r-tuya').textContent =
+      tuyaRaw > 0   ? (tuyaRaw / 10000).toFixed(1)   + '万円' : '—';
+    document.getElementById('r-seijin').textContent =
+      seijinRaw > 0 ? (seijinRaw / 10000).toFixed(1) + '万円' : '—';
+
+    // 寺院
+    const jiin = getVal('j-ofuse') + getVal('j-kaimyo') + getVal('j-sharei');
+
+    // 合計
+    const total = soogi + henrei + inshoku + jiin;
+
+    // 表示更新
+    document.getElementById('total').innerHTML =
+      total.toFixed(1) + '<span>万円</span>';
+
+    document.getElementById('sub-soogi').textContent   = fmt(soogi);
+    document.getElementById('sub-henrei').textContent  = fmt(henrei);
+    document.getElementById('sub-inshoku').textContent = fmt(inshoku);
+    document.getElementById('sub-jiin').textContent    = fmt(jiin);
+
+    document.getElementById('b-soogi').textContent   = fmtB(soogi);
+    document.getElementById('b-henrei').textContent  = fmtB(henrei);
+    document.getElementById('b-inshoku').textContent = fmtB(inshoku);
+    document.getElementById('b-jiin').textContent    = fmtB(jiin);
+  }
+
+  function resetAll() {
+    applyPlan('standard');
+    setVal('h-tanka', 3000); setVal('h-ninzu', 30);
+    setVal('i-tuya-tanka', 3000);  setVal('i-tuya-ninzu', 20);
+    setVal('i-seijin-tanka', 5000); setVal('i-seijin-ninzu', 20);
+    setVal('j-ofuse', 20); setVal('j-kaimyo', 30); setVal('j-sharei', 2);
+    calc();
+  }
+
+  calc();
+</script>
+</body>
+</html>
